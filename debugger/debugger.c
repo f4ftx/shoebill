@@ -27,7 +27,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+
+#ifdef __linux__
+#include <GL/glut.h>
+#include <signal.h>
+#else
 #include <GLUT/glut.h>
+#endif
+
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
@@ -493,7 +500,7 @@ char *cli_prompt_callback(EditLine *el)
 }
 
 // Hack to clear line after ^C. el_reset() screws up tty when called from the signal handler.
-void ch_reset(EditLine *el, int mclear);
+void ch_reset(EditLine *el, int mclear){}
 
 void signal_callback(int sig)
 {
