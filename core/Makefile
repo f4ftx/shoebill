@@ -1,6 +1,12 @@
-
+OS=$(shell uname)
+ifeq ($(OS), Linux)
+CC = gcc
+CFLAGS = -O3 -ggdb -Wno-deprecated-declarations
+else
 CC = clang
 CFLAGS = -O3 -ggdb -flto -Wno-deprecated-declarations
+endif
+
 # CFLAGS = -O0 -ggdb -Wno-deprecated-declarations
 
 
@@ -38,10 +44,14 @@ TEMP = ../intermediates
 all: $(TEMP)/libshoebill_core.a 
 
 $(TEMP)/libshoebill_core.a: $(TEMP) $(DEPS) $(OBJ_x86_64)
+ifeq ($(OS), Linux)
+	ar crvs $(TEMP)/libshoebill_core.a $(OBJ_x86_64)
+	ranlib $(TEMP)/libshoebill_core.a
+else
 	libtool -static -v -o $(TEMP)/libshoebill_core.a.x86_64 $(OBJ_x86_64)
 	libtool -static -v -o $(TEMP)/libshoebill_core.a.i386 $(OBJ_i386)
 	lipo -create -output $(TEMP)/libshoebill_core.a $(TEMP)/libshoebill_core.a.x86_64 $(TEMP)/libshoebill_core.a.i386
-
+endif
 
 # Split object files into i386/x86_64 versions, since it seems that libtool is unable to 
 # link a static universal library for -O4 object files.
@@ -50,16 +60,28 @@ $(TEMP)/libshoebill_core.a: $(TEMP) $(DEPS) $(OBJ_x86_64)
 
 # Build object files
 $(OBJ_NEED_NOTHING): $(TEMP)/%.o: %.c $(DEPS)
+ifeq ($(OS), Linux)
+	$(CC) -c $(CFLAGS) $< -o $@
+else
 	$(CC) -c -arch x86_64 $(CFLAGS) $< -o $@
 	$(CC) -c -arch i386 $(CFLAGS) $< -o $@.i386
+endif
 
 $(OBJ_NEED_PREPROCESSING): $(TEMP)/%.o: $(TEMP)/%.post.c $(DEPS)
+ifeq ($(OS), Linux)
+	$(CC) -c $(CFLAGS) $< -o $@
+else
 	$(CC) -c -arch x86_64 $(CFLAGS) $< -o $@
 	$(CC) -c -arch i386 $(CFLAGS) $< -o $@.i386
+endif
 
 $(OBJ_NEED_DECODER): $(TEMP)/%.o: $(TEMP)/%.post.c $(DEPS) $(TEMP)/dis_decoder_guts.c $(TEMP)/inst_decoder_guts.c
+ifeq ($(OS), Linux)
+	$(CC) -c $(CFLAGS) $< -o $@
+else
 	$(CC) -c -arch x86_64 $(CFLAGS) $< -o $@
 	$(CC) -c -arch i386 $(CFLAGS) $< -o $@.i386
+endif
 
 # Preprocess C files 
 $(POST_PREPROCESSING): $(TEMP)/%.post.c: %.c $(DEPS)
