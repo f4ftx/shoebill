@@ -39,33 +39,32 @@ const char *reg_names[8] = {
     "handshake", "handshake", "mode", "write-data"
 };
 
-uint8_t iwm_dma_read()
+uint8_t iwm_dma_read(void)
 {
     const uint8_t latch_addr = (shoe.physical_addr >> 10) & 0x7;
     const uint8_t latch_val = (shoe.physical_addr >> 9) & 1;
     uint8_t result;
-    
+
     if (latch_val)
         shoe.iwm.latch |= (1 << latch_addr);
     else
         shoe.iwm.latch &= (~~(1 << latch_addr));
-    
+
     // reg = {q7, q6, motor}
     const uint8_t reg = ((shoe.iwm.latch >> 5) & 6) |
                         ((shoe.iwm.latch >> 4) & 1);
-    
+
     slog("iwm_dma_read: %s %s (reg = %u%u%u '%s' ",
            latch_val ? "setting" : "clearing",
            latch_names[latch_addr],
            (reg>>2), (reg>>1)&1, reg&1, reg_names[reg]);
-    
-    
+
     // Allegedly, register reads can only occur when latch_val==0
     if (latch_val) {
         result = 0;
         goto done;
     }
-    
+
     switch (reg) {
         case 0: // read all ones
             result = 0xff;
@@ -88,38 +87,38 @@ uint8_t iwm_dma_read()
             break;
     }
 done:
-    
+
     slog("result=0x%02x)\n", result);
 
     return result;
 }
-void iwm_dma_write()
+void iwm_dma_write(void)
 {
     const uint8_t latch_addr = (shoe.physical_addr >> 10) & 0x7;
     const uint8_t latch_val = (shoe.physical_addr >> 9) & 1;
-    
+
     uint8_t data = shoe.physical_dat;
-    
+
     if (latch_val)
         shoe.iwm.latch |= (1 << latch_addr);
     else
         shoe.iwm.latch &= (~~(1 << latch_addr));
-    
+
     // reg = {q7, q6, motor}
     const uint8_t reg = ((shoe.iwm.latch >> 5) & 6) |
                         ((shoe.iwm.latch >> 4) & 1);
-    
+
     slog("iwm_dma_write: %s %s (reg = %u%u%u '%s' val 0x%02x)\n",
          latch_val ? "setting" : "clearing",
          latch_names[latch_addr],
          (reg>>2), (reg>>1)&1, reg&1, reg_names[reg],
          data);
-    
+
     // Allegedly, register writes can only occur when latch_val==1
     if (!latch_val) {
         return ;
     }
-    
+
     switch (reg) {
         case 6: // Write mode
             shoe.iwm.mode = data & ~b(01111111);
@@ -127,15 +126,17 @@ void iwm_dma_write()
         case 7: // Write data
             shoe.iwm.data = data;
             break;
+        default:
+            break;
     }
 }
 
-void init_iwm_state ()
+void init_iwm_state (void)
 {
     memset(&shoe.iwm, 0, sizeof(iwm_state_t));
 }
 
-void reset_iwm_state ()
+void reset_iwm_state (void)
 {
     memset(&shoe.iwm, 0, sizeof(iwm_state_t));
 }

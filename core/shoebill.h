@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <time.h>
-#include <stdint.h> 
+#include <stdint.h>
 #include <sys/time.h>
 #include <pthread.h>
 
@@ -93,31 +93,31 @@ typedef struct {
     uint32_t ram_size;
     const char *rom_path;
     const char *aux_kernel_path; // almost always "/unix"
-    
+
     _Bool aux_verbose : 1; // Whether to boot A/UX in verbose mode
     _Bool aux_autoconfig : 1; // Whether to run A/UX autoconfig
     _Bool debug_mode : 1; // Whether to enable hacks that debugger depends on
-    
+
     uint16_t root_ctrl, swap_ctrl;
     uint8_t root_drive, swap_drive;
     uint8_t root_partition, swap_partition;
     uint8_t root_cluster;
-    
+
     /* Devices at the 7 possible target SCSI ids */
     struct {
         const char *path;
     } scsi_devices[7]; // scsi id #7 is the initiator (can't be a target)
-    
+
     /* Initialize pram[] with initial PRAM data */
     uint8_t pram[256];
-    
+
     /*
      * This callback is called whenever a PRAM byte is changed.
      * It blocks the CPU, so try to return immediately.
      */
     shoebill_pram_callback_t pram_callback;
     void *pram_callback_param;
-    
+
     char error_msg[8192];
 } shoebill_config_t;
 
@@ -167,8 +167,8 @@ void shoebill_mouse_move(int32_t x, int32_t y);
 void shoebill_mouse_move_delta (int32_t x, int32_t y);
 void shoebill_mouse_click(uint8_t down);
 
-void shoebill_start();
-void shoebill_stop();
+void shoebill_start(void);
+void shoebill_stop(void);
 
 void slog(const char *fmt, ...);
 
@@ -202,7 +202,7 @@ uint8_t* shoebill_extract_kernel(const char *disk_path, const char *kernel_path,
             (reg) = ((reg)&mask_r) | ((val)&mask_v);\
         } while (0)
         #define get_reg__(reg, s) chop(reg, s)
-        
+
         #define get_d(n,s) get_reg__(shoe.d[n], s)
         #define get_a(n,s) get_reg__(shoe.a[n], s)
         #define set_d(n,val,s) set_reg__(shoe.d[n], val, s)
@@ -230,7 +230,7 @@ uint8_t* shoebill_extract_kernel(const char *disk_path, const char *kernel_path,
             else \
                 shoe.usp = shoe.a[7]; \
         }
-        
+
         // Load the correct stack pointer into a7 based on bits in sr
         #define load_stack_pointer() { \
             if (sr_s() && sr_m()) \
@@ -240,7 +240,7 @@ uint8_t* shoebill_extract_kernel(const char *disk_path, const char *kernel_path,
             else \
                 shoe.a[7] = shoe.usp; \
         }
-        
+
         // set the status register, swapping a7 if necessary
         #define set_sr(newsr) { \
             make_stack_pointers_valid(); \
@@ -305,7 +305,7 @@ typedef struct _alloc_pool_t {
             struct _alloc_pool_t *parent_link; // pointer to the parent's CHILD_LINK
         } head;
     } t;
-    
+
     uint32_t type;
     uint32_t end_magic;
 } alloc_pool_t;
@@ -367,7 +367,7 @@ typedef struct {
     uint16_t num_relocs;
     uint16_t num_lines;
     uint32_t flags;
-    
+
     uint8_t *data;
 } coff_section;
 
@@ -392,6 +392,7 @@ typedef struct {
     alloc_pool_t *pool;
 } coff_file;
 
+void symb_inorder(rb_node *cur);
 coff_symbol* coff_find_func(coff_file *coff, uint32_t addr);
 coff_symbol* coff_find_symbol(coff_file *coff, const char *name);
 
@@ -432,8 +433,8 @@ typedef struct {
     uint8_t unknown1;
     uint8_t volume_ctrl;
     uint8_t clock_ctrl;
-    
-    
+
+
     uint16_t left_ptr, right_ptr;
 } apple_sound_chip_registers_t;
 
@@ -447,31 +448,30 @@ typedef enum {
 
 typedef struct {
     adb_command_type_t command_type;
-    
+
     uint8_t command_byte; // The command byte passed in during state 0
     uint8_t command_device_id; // the device id in the command byte
     uint8_t command_reg; // the register in the command byte
-    
+
     uint8_t service_request, timeout;
     uint16_t pending_service_requests;
     uint8_t pending_poll;
     uint8_t poll; // a poll is in progress
-    
-    
+
     uint8_t state; // State machine state (0 => host send command, 1 => even byte, 2 => odd byte, 3 => idle
     uint8_t data_i, data_len;
     uint8_t data[8];
-    
+
     pthread_mutex_t lock;
-    
+
 } adb_state_t;
 
 typedef struct {
     uint8_t ifr, ier, ddrb, ddra, sr, acr, pcr;
-    
+
     uint8_t rega_input, regb_input;
     uint8_t rega_output, regb_output;
-    
+
     uint16_t t1c, t2c, t1l;
     long double t1_last_set, t2_last_set;
     _Bool /*t1_interrupt_enabled,*/ t2_interrupt_enabled; // whether the "one-shot" interrupt can fire
@@ -482,24 +482,24 @@ typedef struct {
 typedef struct {
     uint8_t data[256];
     uint8_t last_bits;
-    
+
     // FSM
     uint8_t command[8];
     uint8_t byte, mode, command_i, bit_i;
-    
+
     shoebill_pram_callback_t callback;
     void *callback_param;
 } pram_state_t;
 
 void init_via_state (uint8_t pram_data[256], shoebill_pram_callback_t callback, void *callback_param);
-void init_adb_state();
-void init_scsi_bus_state();
-void init_iwm_state();
+void init_adb_state(void);
+void init_scsi_bus_state(void);
+void init_iwm_state(void);
 
-void reset_via_state();
-void reset_adb_state();
-void reset_scsi_bus_state();
-void reset_iwm_state();
+void reset_via_state(void);
+void reset_adb_state(void);
+void reset_scsi_bus_state(void);
+void reset_iwm_state(void);
 
 typedef struct {
     uint8_t scsi_id;
@@ -513,7 +513,7 @@ typedef struct {
     struct {
         uint8_t code_a, code_b;
     } keys[KEYBOARD_STATE_MAX_KEYS];
-    
+
     int down_modifiers; // Modifiers that we've already told the OS are down (shift, ctrl,
     uint32_t key_i;
     uint8_t last_modifier_mask;
@@ -529,7 +529,7 @@ typedef struct {
 typedef struct {
     // lsb==phase0, msb==L7
     uint8_t latch;
-    
+
     // Registers
     uint8_t data, status, mode, handshake;
 } iwm_state_t;
@@ -550,37 +550,37 @@ enum scsi_bus_phase {
 typedef struct {
     // Phase
     enum scsi_bus_phase phase;
-    
+
     // Scsi bus signals
-    
+
     uint8_t init_bsy:1; // BSY, driven by initiator
     uint8_t target_bsy:1; // BSY, driven by target
-    
+
     uint8_t sel:1; // SEL, driven by both target and initiator
-    
+
     uint8_t rst:1; // RST, driven by both target and initiator
-    
+
     uint8_t cd:1;  // C/D (control or data), driven by target
     uint8_t io:1;  // I/O, driven by target
     uint8_t ack:1; // ACK, driven by initiator
     uint8_t msg:1; // MSG, driven by target
     uint8_t atn:1; // ATN, driven by initiator
     uint8_t req:1; // REQ, driven by target
-    
+
     uint8_t data; // DB0-7, data lines, driven by both target and initiator
-    
+
     // NCR 5380 registers
     uint8_t initiator_command;
     uint8_t mode;
     uint8_t target_command;
     uint8_t select_enable; // probably not implementing this...
-    
+
     // Arbitration state
     uint8_t init_id; // initiator ID (as a bit mask) (usually 0x80)
-    
+
     // Selection state
     uint8_t target_id; // target ID (as an int [0, 7])
-    
+
     // transfer buffers
     uint8_t buf[512 * 256];
     uint32_t bufi;
@@ -589,14 +589,14 @@ typedef struct {
     uint32_t write_offset;
     uint8_t status_byte;
     uint8_t message_byte; // only one-byte messages supported for now
-    
+
     // hack
     uint8_t dma_send_written; // Gets set whenever register 5 (start_dma_send) is written to, and cleared randomly.
     // This is because aux 1.1.1 sends an extra byte after sending the write command, and that's not
     // part of the write data. start_dma_send will be written when the data is actually starting.
     uint8_t sent_status_byte_via_reg0; // Gets set when the status byte is red via register 0.
     // This lets us know it's safe to switch to the MESSAGE_IN phase
-    
+
 } scsi_bus_state_t;
 
 typedef struct {
@@ -606,11 +606,11 @@ typedef struct {
 typedef struct {
     video_ctx_color_t *temp_buf, *clut;
     uint8_t *rom, *direct_buf;
-    
+
     uint32_t pixels;
-    
+
     uint16_t width, height, scanline_width, line_offset;
-    
+
     uint16_t depth, clut_idx;
 } shoebill_card_video_t;
 
@@ -623,53 +623,53 @@ typedef struct {
 typedef struct {
     // Card ROM (4kb)
     uint8_t rom[0x1000];
-    
+
     // Card RAM (16kb buffer, apparently)
     uint8_t ram[0x4000];
-    
+
     // Card MAC address
     uint8_t ethernet_addr[6];
-    
+
     // Card slot number
     uint8_t slotnum;
-    
+
     // -- thread state --
     uint8_t recv_buf[4096], send_buf[4096];
     uint16_t recv_len, send_len;
     _Bool teardown, send_ready;
-    
+
     pthread_t sender_pid, receiver_pid;
     pthread_mutex_t lock, sender_cond_mutex;
     pthread_cond_t sender_cond;
-    
+
     // -- registers --
-    
+
     uint8_t cr; // command register, all pages, read/write
-    
+
     // Page 0 registers
     uint8_t isr; // interrupt status register, read/write
     uint8_t imr; // interrupt mask register, write
-    
+
     uint8_t dcr; // data configuration register (write)
     uint8_t tcr; // transmit configuration register (write)
     uint8_t rcr; // receive configuration register (write)
-    
+
     uint8_t pstart; // receive buffer start pointer (write)
     uint8_t pstop; // receive buffer boundary (write)
     uint8_t bnry; // a different kind of receive buffer boundary (read/write)
-    
+
     uint8_t tpsr; // transmit page start pointer (write)
     uint16_t tbcr; // transmit buffer count register (write)
-    
+
     uint8_t rsr; // receive status register (read)
-    
-    
+
+
     // Page 1 registers (read/write)
     uint8_t mar[8]; // multicast address
     uint8_t par[6]; // physical address
     uint8_t curr; // current page
-    
-    
+
+
     int tap_fd;
 } shoebill_card_ethernet_t;
 
@@ -688,7 +688,7 @@ typedef struct {
     uint8_t slotnum;
     _Bool connected;
     _Bool interrupts_enabled;
-    
+
     void *ctx;
     card_names_t card_type;
 } nubus_card_t;
@@ -706,7 +706,7 @@ typedef struct {
 typedef struct {
     uint64_t emu_start_time;
     struct timeval last_60hz_tick; // for via1 ca1
-    
+
 } via_clock_t;
 
 #define unstop_cpu_thread() do {\
@@ -716,25 +716,25 @@ typedef struct {
 } while (0)
 
 typedef struct {
-    
+
     _Bool running;
-    
+
 #define SHOEBILL_STATE_STOPPED (1 << 8)
 #define SHOEBILL_STATE_RETURN (1 << 9)
-    
+
     // bits 0-6 are CPU interrupt priorities
     // bit 8 indicates that STOP was called
     volatile uint32_t cpu_thread_notifications;
     volatile uint32_t via_thread_notifications;
-    
+
     pthread_mutex_t cpu_thread_lock;
     pthread_mutex_t via_clock_thread_lock; // synchronizes shoebill_start() and the starting of via_clock_thread()
     pthread_mutex_t via_cpu_lock; // synchronizes reads/writes of VIA registers and via_clock_thread()
-    
+
     // The pthread condition/mutex pair for yielding CPU on STOP, and waking up upon receiving an interrupt
     pthread_mutex_t cpu_stop_mutex;
     pthread_cond_t cpu_stop_cond;
-    
+
     // -- Assorted CPU state variables --
     uint16_t op; // the first word of the instruction we're currently running
     uint16_t orig_sr; // the sr before we began executing the instruction
@@ -742,13 +742,13 @@ typedef struct {
     uint16_t exception;
     _Bool abort;
     _Bool suppress_exceptions;
-    
+
     // -- Physical memory --
     uint8_t *physical_mem_base;
     uint32_t physical_mem_size;
     uint8_t *physical_rom_base;
     uint32_t physical_rom_size;
-    
+
     uint32_t physical_size; // <- Size of transfer
     uint32_t logical_size; // <- Size of transfer
     uint32_t physical_addr; // <- Address for physical reads/writes
@@ -758,12 +758,12 @@ typedef struct {
 	
     _Bool logical_is_write; // <- boolean: true iff the operation is logical_set()
     uint8_t logical_fc; // logical function code
-    
+
 #define invalidate_pccache() do {shoe.pccache_use_srp = 2;} while (0)
     uint32_t pccache_use_srp; // 1 -> use srp, 0 -> use crp, other -> pccache is invalid
     uint32_t pccache_logical_page;
     uint8_t *pccache_ptr;
-    
+
     // -- PMMU caching structures ---
 #define PMMU_CACHE_KEY_BITS 10
 #define PMMU_CACHE_SIZE (1<<PMMU_CACHE_KEY_BITS)
@@ -771,7 +771,7 @@ typedef struct {
         pmmu_cache_entry_t entry[PMMU_CACHE_SIZE];
         uint8_t valid_map[PMMU_CACHE_SIZE / 8];
     } pmmu_cache[2];
-    
+
     // -- EA state --
     uint32_t uncommitted_ea_read_pc; // set by ea_read(). It's the PC that ea_read_commit will set.
     uint64_t dat; // the raw input/output for the transaction
@@ -779,12 +779,12 @@ typedef struct {
     uint32_t extended_len; // number of instruction bytes used by ea_decode_extended()
     uint8_t sz; // the size of the EA transaction
     uint8_t mr; // a 6-bit mode/reg pair
-    
+
     // -- Registers --
     uint32_t d[8];
     uint32_t a[8];
     uint32_t pc;
-    
+
     uint32_t vbr; // vector base register
     uint32_t sfc; // source function code
     uint32_t dfc; // destination function code
@@ -793,16 +793,16 @@ typedef struct {
     uint32_t usp; // user stack pointer
     uint32_t isp; // interrupt stack pointer
     uint32_t msp; // master stack pointer
-    
+
     uint16_t sr; // status register (use a macro to modify sr!)
-    
+
     // 68851 registers
     uint64_t crp, srp, drp; // user/supervisor/DMA root pointers
     uint32_t tc; // translation control
-    
+
     uint32_t tc_pagesize, tc_pagemask; // page size and page mask
     uint8_t tc_ps, tc_is, tc_is_plus_ps, tc_enable, tc_sre; // commonly read bits in shoe.tc
-    
+
     uint16_t pcsr; // PMMU cache status
     uint16_t ac; // access control
     uint16_t bad[8]; // breakpoint acknowledge data registers
@@ -826,15 +826,15 @@ typedef struct {
             uint16_t b : 1; // bus error
         } bits;
     } psr;
-    
+
     // fpu_state_t pointer
     // (declared here as a void*, to prevent other files
     //  from needing to include SoftFloat/softfloat.h)
     void *fpu_state;
-    
-    
+
+
     // -- Interrupts/VIA chips --
-    
+
     via_state_t via[2];
     via_clock_t via_clocks;
     adb_state_t adb;
@@ -842,67 +842,68 @@ typedef struct {
     keyboard_state_t key;
     mouse_state_t mouse;
     apple_sound_chip_registers_t asc;
-    
+
     iwm_state_t iwm;
-    
+
     scsi_bus_state_t scsi;
     scsi_device_t scsi_devices[8]; // SCSI devices
-    
+
     nubus_card_t slots[16];
-    
+
     coff_file *coff; // Data/symbols from the unix kernel
-    
+
     pthread_t cpu_thread_pid, via_thread_pid;
-    
+
     debugger_state_t dbg;
     alloc_pool_t *pool;
-    
+
     shoebill_config_t config_copy; // copy of the config structure passed to shoebill_initialize()
 } global_shoebill_context_t;
 
 extern global_shoebill_context_t shoe; // declared in cpu.c
 
 // fpu.c functions
-void inst_fscc();
-void inst_fbcc();
-void inst_fsave();
-void inst_frestore();
-void inst_ftrapcc();
-void inst_fdbcc();
-void inst_fnop();
-void inst_fpu_other();
+void inst_fscc(void);
+void inst_fbcc(void);
+void inst_fsave(void);
+void inst_frestore(void);
+void inst_ftrapcc(void);
+void inst_fdbcc(void);
+void inst_fnop(void);
+void inst_fpu_other(void);
 
-void dis_fscc();
-void dis_fbcc();
-void dis_fsave();
-void dis_frestore();
-void dis_ftrapcc();
-void dis_fdbcc();
-void dis_fnop();
-void dis_fpu_other();
+void dis_fscc(void);
+void dis_fbcc(void);
+void dis_fsave(void);
+void dis_frestore(void);
+void dis_ftrapcc(void);
+void dis_fdbcc(void);
+void dis_fnop(void);
+void dis_fpu_other(void);
 void dis_fmath (uint16_t op, uint16_t ext, char *output);
 
-void fpu_initialize();
-void fpu_reset();
+void fpu_initialize(void);
+void fpu_reset(void);
 
 // cpu.c fuctions
 void cpu_step (void);
 void inst_decode (void);
+void write_bitfield(const uint32_t width, const uint32_t offset, const uint32_t M, const uint32_t ea, const uint32_t raw_field);
+uint32_t extract_bitfield(const uint32_t width, const uint32_t offset, const uint32_t M, const uint32_t ea);
+void trap_debug(void);
 
 // exception.c functions
-
 void throw_bus_error(uint32_t addr, uint8_t is_write);
 void throw_long_bus_error(uint32_t addr, uint8_t is_write);
-void throw_address_error();
-void throw_illegal_instruction();
-void throw_privilege_violation();
-void throw_divide_by_zero();
+void throw_address_error(void);
+void throw_illegal_instruction(void);
+void throw_privilege_violation(void);
+void throw_divide_by_zero(void);
 void throw_frame_two (uint16_t sr, uint32_t next_pc, uint32_t vector_num, uint32_t orig_pc);
 void throw_frame_zero(uint16_t sr, uint32_t pc, uint16_t vector_num);
 
 
 // mem.c functions
-
 uint16_t pccache_nextword(uint32_t pc);
 uint32_t pccache_nextlong(uint32_t pc);
 
@@ -948,7 +949,7 @@ extern const _ea_func ea_read_jump_table[64];
 extern const _ea_func ea_read_commit_jump_table[64];
 extern const _ea_func ea_write_jump_table[64];
 extern const _ea_func ea_addr_jump_table[64];
-    
+
 #define ea_read() ea_read_jump_table[shoe.mr]()
 #define ea_read_commit() ea_read_commit_jump_table[shoe.mr]()
 #define ea_write() ea_write_jump_table[shoe.mr]()
@@ -981,44 +982,165 @@ extern const _ea_func ea_addr_jump_table[64];
 
 
 // dis.c functions
+void disass_ea_extended (char *buf, uint8_t mr);
 void disassemble_inst(uint8_t binary[24], uint32_t orig_pc, char *str, uint32_t *instlen);
 char* decode_ea_rw (uint8_t mr, uint8_t sz);
 char* decode_ea_addr (uint8_t mr);
 void dis_decode(void);
 uint16_t dis_next_word (void);
-char* decode_ea_addr (uint8_t mr);
-char* decode_ea_rw (uint8_t mr, uint8_t sz);
+uint32_t dis_next_long (void);
+void dis_reset(void) ;
+void dis_asx_reg (void) ;
+void dis_asx_mem (void) ;
+void dis_lsx_reg (void) ;
+void dis_lsx_mem (void) ;
+void dis_roxx_reg (void) ;
+void dis_roxx_mem (void) ;
+void dis_rox_reg (void) ;
+void dis_rox_mem (void) ;
+void dis_moveq (void) ;
+void dis_add (void) ;
+void dis_adda (void) ;
+void dis_addx (void) ;
+void dis_cmp (void) ;
+void dis_cmpi (void) ;
+void dis_ori (void) ;
+void dis_andi (void) ;
+void dis_addi (void) ;
+void dis_eori (void) ;
+void dis_eori_to_ccr(void) ;
+void dis_eori_to_sr(void) ;
+void dis_movep(void) ;
+void dis_bfextu(void) ;
+void dis_bfchg(void) ;
+void dis_bfexts(void) ;
+void dis_bfclr(void) ;
+void dis_bfset(void) ;
+void dis_bfffo(void) ;
+void dis_bftst(void) ;
+void dis_bfins(void) ;
+void dis_btst_reg(void) ;
+void dis_bchg_reg(void) ;
+void dis_bclr_reg(void) ;
+void dis_bset_reg(void) ;
+void dis_subi (void) ;
+void dis_long_mul (void) ;
+void dis_long_div (void) ;
+void dis_cmpm (void) ;
+void dis_cmpa (void) ;
+void dis_eor (void) ;
+void dis_addq (void) ;
+void dis_subq (void) ;
+void dis_movea (void) ;
+void dis_move (void) ;
+void dis_move_d_to_d (void) ;
+void dis_move_to_d (void) ;
+void dis_move_from_d (void) ;
+void dis_scc (void) ;
+void dis_dbcc (void) ;
+void dis_bcc (void) ;
+void dis_bsr (void) ;
+void dis_subx(void) ;
+void dis_btst_immediate(void) ;
+void dis_move_from_ccr(void) ;
+void dis_move_to_ccr(void) ;
+void dis_neg(void) ;
+void dis_tst(void) ;
+void dis_clr(void) ;
+void dis_bclr_immediate(void) ;
+void dis_bchg_immediate(void) ;
+void dis_bset_immediate(void) ;
+void dis_sub(void) ;
+void dis_suba (void) ;
+void dis_move_to_sr(void) ;
+void dis_move_from_sr(void) ;
+void dis_negx(void) ;
+void dis_not(void) ;
+void dis_lea (void) ;
+void dis_nop (void) ;
+void dis_jsr (void) ;
+void dis_chk (void) ;
+void dis_jmp (void) ;
+void dis_unknown (void) ;
+void dis_link_word (void) ;
+void dis_unlk (void) ;
+void dis_rts (void) ;
+void dis_cinv(void) ;
+void dis_cpush(void) ;
+void dis_link_long(void) ;
+void dis_pea(void) ;
+void dis_nbcd(void) ;
+void dis_sbcd(void) ;
+void dis_pack(void) ;
+void dis_unpk(void) ;
+void dis_divu(void) ;
+void dis_divs(void) ;
+void dis_bkpt(void) ;
+void dis_swap(void) ;
+void dis_abcd(void) ;
+void dis_muls(void) ;
+void dis_mulu(void) ;
+void dis_exg(void) ;
+void dis_stop(void) ;
+void dis_rte(void) ;
+void dis_rtr(void) ;
+void dis_rtd(void) ;
+void dis_move_usp(void) ;
+void dis_and(void) ;
+void dis_or(void) ;
+void dis_ext(void) ;
+void dis_andi_to_sr(void) ;
+void dis_andi_to_ccr(void) ;
+void dis_ori_to_sr(void) ;
+void dis_ori_to_ccr(void) ;
+void dis_movem(void) ;
+void dis_movec(void) ;
+void dis_moves(void) ;
+void dis_cas(void) ;
+void dis_cas2(void) ;
+void dis_trap(void) ;
+void dis_a_line(void) ;
+void dis_callm (void) ;
+void dis_chk2_cmp2 (void) ;
+void dis_illegal (void) ;
+void dis_move16 (void) ;
+void dis_rtm (void) ;
+void dis_tas (void) ;
+void dis_trapcc(void) ;
+void dis_trapv(void) ;
+void dis_mc68851_decode(void) ;
+
 struct dis_t {
     // static
     uint8_t binary[24]; // raw instruction (up to 24 bytes)
     uint32_t orig_pc; // the PC when disassemble_inst() was called
-    
+
     // volatile
     char ea_str_internal[1024]; // data for storing decoded ea strings (ring buffer)
     uint32_t ea_last_pos_internal;
     uint32_t pos; // the current computed length of the instruction
-    
+
     // return
     char *str; // the final returned string
 };
 
 // IWM / floppy
-uint8_t iwm_dma_read();
-void iwm_dma_write();
+uint8_t iwm_dma_read(void);
+void iwm_dma_write(void);
 
 // ncr5380 (scsi)
-void scsi_reg_read();
-void scsi_reg_write();
-uint8_t scsi_dma_read();
-uint32_t scsi_dma_read_long();
+void scsi_reg_read(void);
+void scsi_reg_write(void);
+uint8_t scsi_dma_read(void);
+uint32_t scsi_dma_read_long(void);
 void scsi_dma_write(uint8_t byte);
 void scsi_dma_write_long(uint32_t dat);
 
 // via1 & via2 (+ CPU interrupts)
 void via_raise_interrupt(uint8_t vianum, uint8_t ifr_bit);
-void process_pending_interrupt();
-void via_read_raw();
-void via_write_raw();
+void process_pending_interrupt(void);
+void via_read_raw(void);
+void via_write_raw(void);
 void *via_clock_thread(void *arg);
 
 // VIA registers
@@ -1053,6 +1175,7 @@ void *via_clock_thread(void *arg);
 
 void adb_handle_state_change(uint8_t old_state, uint8_t new_state);
 void adb_request_service_request(uint8_t id);
+void adb_start_service_request(void);
 
 extern const char *atrap_names[4096];
 

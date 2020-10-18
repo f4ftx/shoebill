@@ -29,6 +29,8 @@
 #include <string.h>
 #include "shoebill.h"
 
+uint8_t _rb_index (rb_node *cur, uint32_t *index, rb_node **result);
+
 // Create a new red-black tree
 rb_tree* rb_new(alloc_pool_t *parent_pool, uint32_t sz)
 {
@@ -47,7 +49,9 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
 {
     const uint32_t alloc_size = sizeof(rb_node) + tree->sz;
     rb_node **root = &tree->root;
-    
+    rb_node *parent = NULL;
+    rb_node **cur = root;
+
     // Special edge case: insert the root node if tree's empty
     if (*root == NULL) {
         *root = p_alloc(tree->pool, alloc_size);
@@ -55,9 +59,8 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
         memcpy(&(*root)[1], value, tree->sz);
         return 0;
     }
-    
+
     // traverse
-    rb_node **cur = root, *parent = NULL;
     while (*cur) {
         parent = *cur;
         if (key < (*cur)->key) // left
@@ -71,32 +74,31 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
             return 1; // 1 => the key already existed
         }
     }
-    
+
     // insert
     *cur = p_alloc(tree->pool, alloc_size);
     (*cur)->parent = parent;
     (*cur)->key = key;
     (*cur)->is_red = 1;
     memcpy(&(*cur)[1], value, tree->sz);
-    
+
     // resolve
-    
     rb_node *red = *cur;
     while (red) {
-        rb_node *parent = red->parent;
+        parent = red->parent;
         if (red->is_red == 0) // if this node isn't actually red, return
             break;
         else if (!parent)  // if this is the root node, return
             break;
         else if (!parent->is_red) // if the parent is black, then we're done.
             break;
-        
+
         // otherwise, the parent is red - the grandparent must exist, and must be black
         assert((red->parent->parent) && (!red->parent->parent->is_red));
-        
+
         rb_node *gparent = parent->parent;
         rb_node *uncle = (gparent->left==parent)?gparent->right:gparent->left;
-        
+
         // 8 cases:
         // LLr LRr RLr RRr (uncle is red)
         if (uncle && (uncle->is_red)) {
@@ -106,9 +108,8 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
             red = gparent;
             continue ;
         }
-        
+
         // uncle is black
-        
         rb_node **gparent_ptr;
         if (gparent->parent) { // great-grandparent exists
             rb_node *ggparent = gparent->parent;
@@ -116,11 +117,11 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
         } else { // grandparent is root
             gparent_ptr = root;
         }
-        
+
         uint8_t mycase = ((gparent->left==parent)?0:1);
         mycase = (mycase << 1) | ((parent->left==red)?0:1);
         switch (mycase) {
-                
+
             case 0: {// LLb
                 rb_node *Br = parent->right;
                 *gparent_ptr = parent;
@@ -128,11 +129,11 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
                 gparent->left = Br;
                 parent->is_red = 0;
                 gparent->is_red = 1;
-                
+
                 parent->parent = gparent->parent;
                 gparent->parent = parent;
                 if (Br) Br->parent = gparent;
-                
+
                 red = gparent->right; // gparent became red, gparent->left is black, check gparent->right
                 break ;
             }
@@ -146,13 +147,13 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
                 gparent->left = Cr;
                 red->is_red = 0;
                 gparent->is_red = 1;
-                
+
                 red->parent = gparent->parent;
                 parent->parent = red;
                 gparent->parent = red;
                 if (Cl) Cl->parent = parent;
                 if (Cr) Cr->parent = gparent;
-                
+
                 red = gparent->right;
                 break ;
             }
@@ -165,14 +166,14 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
                 parent->left = Cr;
                 red->is_red = 0;
                 gparent->is_red = 1;
-                
-                
+
+
                 red->parent = gparent->parent;
                 gparent->parent = red;
                 parent->parent = red;
                 if (Cr) Cr->parent = parent;
                 if (Cl) Cl->parent = gparent;
-                
+
                 red = gparent->left;
                 break;
             }
@@ -183,17 +184,20 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
                 gparent->right = Bl;
                 parent->is_red = 0;
                 gparent->is_red = 1;
-                
+
                 parent->parent = gparent->parent;
                 gparent->parent = parent;
                 if (Bl) Bl->parent = gparent;
-                
+
                 red = gparent->left;
+                break;
+            }
+            default: {
                 break;
             }
         }
     }
-    
+
     (*root)->is_red = 0; // make double-sure root is red
     return 0;
 }
@@ -202,7 +206,7 @@ uint8_t rb_insert(rb_tree *tree, rb_key_t key, void *value, void *old_value)
 uint8_t rb_find (rb_tree *tree, rb_key_t key, void *value)
 {
     rb_node *cur = tree->root;
-    
+
     while (cur) {
         if (key < cur->key)
             cur = cur->left;
@@ -221,16 +225,16 @@ uint8_t _rb_index (rb_node *cur, uint32_t *index, rb_node **result)
 {
     if (!cur)
         return 0;
-    
+
     else if (_rb_index(cur->left, index, result) == 1)
         return 1;
-    
+
     else if (0 == *index) {
         *result = cur;
         return 1;
     }
     --*index;
-    
+
     return _rb_index(cur->right, index, result);
 }
 

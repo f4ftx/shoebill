@@ -49,15 +49,10 @@ typedef struct _alloc_pool_t {
             struct _alloc_pool_t *parent_link; // pointer to the parent's CHILD_LINK
         } head;
     } t;
-    
+
     uint32_t magic;
 } alloc_pool_t;
 */
-
-static void _check_pool(alloc_pool_t *pool)
-{
-    
-}
 
 static alloc_pool_t* _ptr_to_header(void *ptr)
 {
@@ -68,20 +63,20 @@ static alloc_pool_t* _ptr_to_header(void *ptr)
 void* p_alloc(alloc_pool_t *pool, uint64_t size)
 {
     alloc_pool_t *buf = calloc(sizeof(alloc_pool_t) + size, 1);
-    
+
     buf->type = POOL_ALLOC_TYPE;
     buf->t.alloc.size = size;
-    
+
     buf->start_magic = POOL_START_MAGIC;
     buf->end_magic = POOL_END_MAGIC;
-    
+
     buf->next = pool->next;
     buf->prev = pool;
-    
+
     if (pool->next)
         pool->next->prev = buf;
     pool->next = buf;
-    
+
     return &buf[1];
 }
 
@@ -92,38 +87,38 @@ void* p_realloc(void *ptr, uint64_t size)
     assert(header->start_magic == POOL_START_MAGIC);
     assert(header->end_magic == POOL_END_MAGIC);
     assert(header->type == POOL_ALLOC_TYPE);
-    
+
     alloc_pool_t *new_header = realloc(header, size + sizeof(alloc_pool_t));
-    
+
     if (new_header) {
         new_header->t.alloc.size = size;
-        
+
         if (new_header->next)
             new_header->next->prev = new_header;
-        
+
         if (new_header->prev)
             new_header->prev->next = new_header;
-    
+
         return &new_header[1];
     }
-    
+
     return NULL;
 }
 
-/* 
+/*
  * Free *any* kind of alloc_pool_t header
  */
 static void _p_free_any(alloc_pool_t *header)
 {
     assert(header->start_magic == POOL_START_MAGIC);
     assert(header->end_magic == POOL_END_MAGIC);
-    
+
     if (header->next)
         header->next->prev = header->prev;
-    
+
     if (header->prev)
         header->prev->next = header->next;
-    
+
     free(header);
 }
 
@@ -142,13 +137,13 @@ void p_free_pool(alloc_pool_t *pool)
 {
     while (pool->prev)
         pool = pool->prev;
-    
+
     while (pool) {
         alloc_pool_t *cur = pool;
         pool = cur->next;
         assert(cur->start_magic == POOL_START_MAGIC);
         assert(cur->end_magic == POOL_END_MAGIC);
-        
+
         switch (cur->type) {
             case POOL_ALLOC_TYPE:
                 _p_free_any(cur);
@@ -176,20 +171,20 @@ void p_free_pool(alloc_pool_t *pool)
 alloc_pool_t* p_new_pool(alloc_pool_t *parent_pool)
 {
     alloc_pool_t *pool = calloc(sizeof(alloc_pool_t), 1);
-    
+
     pool->start_magic = POOL_START_MAGIC;
     pool->end_magic = POOL_END_MAGIC;
     pool->type = POOL_HEAD;
-    
+
     if (parent_pool) {
         alloc_pool_t *link = _ptr_to_header(p_alloc(parent_pool, 0));
         link->type = POOL_CHILD_LINK;
         link->t.child_link.child = pool; // child_link.child points to the child's HEAD
-        
+
         pool->t.head.parent_link = link; // head.parent_link points to the parent's CHILD_LINK
     }
     else
         pool->t.head.parent_link = NULL;
-    
+
     return pool;
 }

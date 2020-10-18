@@ -6,3 +6,17 @@ xcuserdata
 /gui/build
 /debugger/debugger
 /debugger/debugger.dSYM
+/sdl-gui/adb.post.c
+/sdl-gui/core_api.post.c
+/sdl-gui/cpu.post.c
+/sdl-gui/decoder_gen
+/sdl-gui/dis.post.c
+/sdl-gui/dis_decoder_guts.c
+/sdl-gui/floppy.post.c
+/sdl-gui/fpu.post.c
+/sdl-gui/inst_decoder_guts.c
+/sdl-gui/mc68851.post.c
+/sdl-gui/mem.post.c
+/sdl-gui/shoebill
+/sdl-gui/via.post.c
+

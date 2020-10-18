@@ -30,9 +30,9 @@
 
 #include <stdint.h>
 
-void inst_mc68851_prestore();
-void inst_mc68851_psave();
-void inst_mc68851_pbcc();
+void inst_mc68851_prestore(void);
+void inst_mc68851_psave(void);
+void inst_mc68851_pbcc(void);
 
 void inst_mc68851_pdbcc(uint16_t cond);
 void inst_mc68851_ptrapcc(uint16_t cond);
@@ -45,10 +45,9 @@ void inst_mc68851_pmove(uint16_t ext);
 void inst_mc68851_ptest(uint16_t ext);
 void inst_mc68851_pflushr(uint16_t ext);
 
-
-void dis_mc68851_prestore();
-void dis_mc68851_psave();
-void dis_mc68851_pbcc();
+void dis_mc68851_prestore(void);
+void dis_mc68851_psave(void);
+void dis_mc68851_pbcc(void);
 
 void dis_mc68851_pdbcc(uint16_t cond);
 void dis_mc68851_ptrapcc(uint16_t cond);

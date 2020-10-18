@@ -679,7 +679,7 @@ static floatx80
             //
             // shift64RightJamming( zSig0, 1 - zExp, &zSig0 );
             shift64RightJamming( zSig0, -zExp, &zSig0 );
-            
+
             zExp = 0;
             roundBits = zSig0 & roundMask;
             if ( isTiny && roundBits ) float_raise( float_flag_underflow );
@@ -696,7 +696,7 @@ static floatx80
     }
     if ( roundBits ) float_exception_flags |= float_flag_inexact;
     zSig0 += roundIncrement;
-    if ( zSig0 < roundIncrement ) {
+    if ( zSig0 < (bits64)roundIncrement ) {
         ++zExp;
         zSig0 = LIT64( 0x8000000000000000 );
     }
@@ -1197,7 +1197,6 @@ float32 int64_to_float32( int64 a )
     flag zSign;
     uint64 absA;
     int8 shiftCount;
-    bits32 zSig;
 
     if ( a == 0 ) return 0;
     zSign = ( a < 0 );
@@ -1585,6 +1584,8 @@ float32 float32_round_to_int( float32 a )
             return aSign ? 0xBF800000 : 0;
          case float_round_up:
             return aSign ? 0x80000000 : 0x3F800000;
+         default:
+            break;
         }
         return packFloat32( aSign, 0, 0 );
     }
@@ -1926,7 +1927,7 @@ float32 float32_div( float32 a, float32 b )
 
 float32 float32_rem( float32 a, float32 b )
 {
-    flag aSign, bSign, zSign;
+    flag aSign, zSign;
     int16 aExp, bExp, expDiff;
     bits32 aSig, bSig;
     bits32 q;
@@ -1939,7 +1940,6 @@ float32 float32_rem( float32 a, float32 b )
     aSign = extractFloat32Sign( a );
     bSig = extractFloat32Frac( b );
     bExp = extractFloat32Exp( b );
-    bSign = extractFloat32Sign( b );
     if ( aExp == 0xFF ) {
         if ( aSig || ( ( bExp == 0xFF ) && bSig ) ) {
             return propagateFloat32NaN( a, b );
@@ -2170,7 +2170,6 @@ flag float32_eq_signaling( float32 a, float32 b )
 flag float32_le_quiet( float32 a, float32 b )
 {
     flag aSign, bSign;
-    int16 aExp, bExp;
 
     if (    ( ( extractFloat32Exp( a ) == 0xFF ) && extractFloat32Frac( a ) )
          || ( ( extractFloat32Exp( b ) == 0xFF ) && extractFloat32Frac( b ) )
@@ -2516,6 +2515,8 @@ float64 float64_round_to_int( float64 a )
          case float_round_up:
             return
             aSign ? LIT64( 0x8000000000000000 ) : LIT64( 0x3FF0000000000000 );
+         default:
+            break;
         }
         return packFloat64( aSign, 0, 0 );
     }
@@ -2866,7 +2867,7 @@ float64 float64_div( float64 a, float64 b )
 
 float64 float64_rem( float64 a, float64 b )
 {
-    flag aSign, bSign, zSign;
+    flag aSign, zSign;
     int16 aExp, bExp, expDiff;
     bits64 aSig, bSig;
     bits64 q, alternateASig;
@@ -2877,7 +2878,6 @@ float64 float64_rem( float64 a, float64 b )
     aSign = extractFloat64Sign( a );
     bSig = extractFloat64Frac( b );
     bExp = extractFloat64Exp( b );
-    bSign = extractFloat64Sign( b );
     if ( aExp == 0x7FF ) {
         if ( aSig || ( ( bExp == 0x7FF ) && bSig ) ) {
             return propagateFloat64NaN( a, b );
@@ -2955,7 +2955,6 @@ float64 float64_sqrt( float64 a )
     int16 aExp, zExp;
     bits64 aSig, zSig, doubleZSig;
     bits64 rem0, rem1, term0, term1;
-    float64 z;
 
     aSig = extractFloat64Frac( a );
     aExp = extractFloat64Exp( a );
@@ -3093,7 +3092,6 @@ flag float64_eq_signaling( float64 a, float64 b )
 flag float64_le_quiet( float64 a, float64 b )
 {
     flag aSign, bSign;
-    int16 aExp, bExp;
 
     if (    ( ( extractFloat64Exp( a ) == 0x7FF ) && extractFloat64Frac( a ) )
          || ( ( extractFloat64Exp( b ) == 0x7FF ) && extractFloat64Frac( b ) )
@@ -3451,7 +3449,7 @@ floatx80 floatx80_round_to_int( floatx80 a )
     bits64 lastBitMask, roundBitsMask;
     int8 roundingMode;
     floatx80 z;
-    
+
     // [shoebill]
     a = floatx80_de_unnormalize(a);
 
@@ -3486,6 +3484,8 @@ floatx80 floatx80_round_to_int( floatx80 a )
             return
                   aSign ? packFloatx80( 1, 0, 0 )
                 : packFloatx80( 0, 0x3FFF, LIT64( 0x8000000000000000 ) );
+         default:
+            break;
         }
         return packFloatx80( aSign, 0, 0 );
     }
@@ -3884,12 +3884,12 @@ floatx80 floatx80_div( floatx80 a, floatx80 b )
 
 floatx80 floatx80_rem( floatx80 a, floatx80 b )
 {
-    flag aSign, bSign, zSign;
+    flag aSign, zSign;
     int32 aExp, bExp, expDiff;
     bits64 aSig0, aSig1, bSig;
     bits64 q, term0, term1, alternateASig0, alternateASig1;
     floatx80 z;
-    
+
     // [shoebill]
     a = floatx80_de_unnormalize(a);
     b = floatx80_de_unnormalize(b);
@@ -3899,7 +3899,6 @@ floatx80 floatx80_rem( floatx80 a, floatx80 b )
     aSign = extractFloatx80Sign( a );
     bSig = extractFloatx80Frac( b );
     bExp = extractFloatx80Exp( b );
-    bSign = extractFloatx80Sign( b );
     if ( aExp == 0x7FFF ) {
         if (    (bits64) ( aSig0<<1 )
              || ( ( bExp == 0x7FFF ) && (bits64) ( bSig<<1 ) ) ) {
@@ -4641,6 +4640,8 @@ float128 float128_round_to_int( float128 a )
                 return
                       aSign ? packFloat128( 1, 0, 0, 0 )
                     : packFloat128( 0, 0x3FFF, 0, 0 );
+             default:
+                break;
             }
             return packFloat128( aSign, 0, 0, 0 );
         }
@@ -5032,7 +5033,7 @@ float128 float128_div( float128 a, float128 b )
 
 float128 float128_rem( float128 a, float128 b )
 {
-    flag aSign, bSign, zSign;
+    flag aSign, zSign;
     int32 aExp, bExp, expDiff;
     bits64 aSig0, aSig1, bSig0, bSig1, q, term0, term1, term2;
     bits64 allZero, alternateASig0, alternateASig1, sigMean1;
@@ -5046,7 +5047,6 @@ float128 float128_rem( float128 a, float128 b )
     bSig1 = extractFloat128Frac1( b );
     bSig0 = extractFloat128Frac0( b );
     bExp = extractFloat128Exp( b );
-    bSign = extractFloat128Sign( b );
     if ( aExp == 0x7FFF ) {
         if (    ( aSig0 | aSig1 )
              || ( ( bExp == 0x7FFF ) && ( bSig0 | bSig1 ) ) ) {
